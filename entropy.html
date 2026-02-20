@@ -321,7 +321,7 @@
             <button id="pause-btn">Pause</button>
             <div class="slider-container">
                 <label>Temperature:</label>
-                <input type="range" id="temp-slider" min="1" max="10" value="3">
+                <input type="range" id="temp-slider" min="1" max="10" value="5">
                 <span id="temp-value">3</span>
             </div>
         </div>
@@ -375,7 +375,7 @@
         let swapCount = 0;
         let workCount = 0;
         let isPaused = false;
-        let temperature = 3;
+        let temperature = 5;
         let selectedIndex = null;
 
         const gridEl = document.getElementById('grid');
@@ -556,10 +556,11 @@
         }
 
         function gameLoop() {
-            // Much gentler chaos - only occasional swaps based on temperature
-            // At temp 1: ~0.5 swaps per second
-            // At temp 10: ~5 swaps per second
-            if (Math.random() < temperature * 0.02) {
+            // Chaos rate scales with temperature
+            // At temp 1: ~1 swap per second
+            // At temp 5: ~5 swaps per second  
+            // At temp 10: ~10 swaps per second
+            if (Math.random() < temperature * 0.1) {
                 randomSwap();
             }
         }
