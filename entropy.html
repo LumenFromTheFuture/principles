@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entropy</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            max-width: 700px;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 1rem;
+            margin-bottom: 8px;
+        }
+
+        .quote {
+            font-style: italic;
+            color: #e94560;
+            font-size: 0.95rem;
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .grid-container {
+            position: relative;
+            border: 2px solid #e94560;
+            border-radius: 8px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .instruction {
+            text-align: center;
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .instruction.has-selection {
+            color: #4ade80;
+        }
+
+        #grid {
+            display: grid;
+            gap: 2px;
+        }
+
+        .tile {
+            width: 40px;
+            height: 40px;
+            border-radius: 4px;
+            transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+            cursor: pointer;
+        }
+
+        /* Background tiles (empty) */
+        .tile.background {
+            background: #2a2a4a;
+        }
+
+        /* Pattern tile in CORRECT position = green */
+        .tile.correct {
+            background: linear-gradient(135deg, #22c55e, #4ade80);
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+        }
+
+        /* Pattern tile in WRONG position = red */
+        .tile.displaced {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            box-shadow: 0 0 10px rgba(220, 38, 38, 0.5);
+        }
+
+        /* Target hint - where pattern tiles should go */
+        .tile.target-hint {
+            box-shadow: inset 0 0 0 3px rgba(34, 197, 94, 0.3);
+        }
+
+        /* Selected tile */
+        .tile.selected {
+            transform: scale(1.15);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+            z-index: 10;
+        }
+
+        .tile:hover {
+            transform: scale(1.05);
+        }
+
+        .tile.selected:hover {
+            transform: scale(1.15);
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .stat {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #e94560;
+        }
+
+        .stat-value.good {
+            color: #4ade80;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 4px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            background: linear-gradient(135deg, #e94560, #ff6b6b);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(233, 69, 96, 0.4);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 15px;
+            border-radius: 6px;
+        }
+
+        .slider-container label {
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        input[type="range"] {
+            width: 120px;
+            accent-color: #e94560;
+        }
+
+        .explanation {
+            max-width: 700px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .explanation h2 {
+            color: #e94560;
+            font-size: 1.2rem;
+            margin-bottom: 10px;
+        }
+
+        .explanation p {
+            color: #aaa;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .explanation strong {
+            color: #e0e0e0;
+        }
+
+        .insight-box {
+            background: rgba(233, 69, 96, 0.1);
+            border-left: 3px solid #e94560;
+            padding: 12px 15px;
+            margin: 15px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .insight-box h3 {
+            color: #e94560;
+            font-size: 1rem;
+            margin-bottom: 6px;
+        }
+
+        .combinatorics {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        .combinatorics .big-number {
+            color: #e94560;
+            font-weight: bold;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 0.85rem;
+        }
+
+        footer a {
+            color: #e94560;
+            text-decoration: none;
+        }
+
+        @media (max-width: 500px) {
+            .tile {
+                width: 32px;
+                height: 32px;
+            }
+            
+            .stats {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            
+            .stat {
+                padding: 10px;
+            }
+            
+            .stat-value {
+                font-size: 1.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Entropy</h1>
+        <p class="subtitle">Why disorder is overwhelmingly more probable than order</p>
+        <p class="quote">"The law that entropy always increases holds, I think, the supreme position among the laws of Nature." — Arthur Eddington</p>
+    </header>
+
+    <div class="main-container">
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value" id="order-percent">100%</div>
+                <div class="stat-label">Order</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="work-done">0</div>
+                <div class="stat-label">Work Done</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="swaps">0</div>
+                <div class="stat-label">Random Swaps</div>
+            </div>
+        </div>
+
+        <p class="instruction" id="instruction">Click a tile to select it, then click where you want it to go</p>
+
+        <div class="grid-container">
+            <div id="grid"></div>
+        </div>
+
+        <div class="combinatorics">
+            <span class="big-number">1</span> ordered state among <span class="big-number" id="total-states">—</span> possible arrangements
+        </div>
+
+        <div class="controls">
+            <button id="reset-btn">Reset Order</button>
+            <button id="pause-btn">Pause</button>
+            <div class="slider-container">
+                <label>Temperature:</label>
+                <input type="range" id="temp-slider" min="1" max="10" value="5">
+                <span id="temp-value">3</span>
+            </div>
+        </div>
+
+        <div class="explanation">
+            <h2>The Principle</h2>
+            <p>
+                There is exactly <strong>one way</strong> for these tiles to form the pattern, but 
+                <strong>astronomical numbers</strong> of ways for them to be disordered. Random motion 
+                doesn't "push" toward disorder—disorder is simply overwhelmingly more probable.
+            </p>
+            
+            <div class="insight-box">
+                <h3>🎯 The Core Insight</h3>
+                <p>Entropy isn't a force. It's statistics. With 17 colored tiles among 64 positions, there are over a quadrillion arrangements—but only ONE is the pattern. Random shuffling finds disorder because disorder is almost everything.</p>
+            </div>
+            
+            <p>
+                <strong>Click tiles to move them back into place.</strong> Green tiles are correct; 
+                red tiles have escaped. The faint outlines show where tiles belong. Notice: the moment 
+                you stop working, entropy takes over.
+            </p>
+            
+            <div class="insight-box">
+                <h3>🌱 Connection to Life</h3>
+                <p>Living things maintain extraordinary order—proteins folded precisely, cells organized, bodies structured. This requires constant work: metabolism. When the work stops, entropy wins. Life is a temporary, local rebellion against probability.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Part of <a href="https://deprincipiis.org">De Principiis</a> — Principles that shape our understanding
+    </footer>
+
+    <script>
+        const GRID_SIZE = 8;
+        const PATTERN = [
+            // Letter "E" pattern in 8x8 grid
+            [0,0,0,0,0,0,0,0],
+            [0,1,1,1,1,1,0,0],
+            [0,1,0,0,0,0,0,0],
+            [0,1,1,1,1,0,0,0],
+            [0,1,0,0,0,0,0,0],
+            [0,1,0,0,0,0,0,0],
+            [0,1,1,1,1,1,0,0],
+            [0,0,0,0,0,0,0,0],
+        ];
+
+        let grid = [];
+        let targetGrid = [];
+        let swapCount = 0;
+        let workCount = 0;
+        let isPaused = false;
+        let temperature = 5;
+        let selectedIndex = null;
+
+        const gridEl = document.getElementById('grid');
+        const orderEl = document.getElementById('order-percent');
+        const workEl = document.getElementById('work-done');
+        const swapsEl = document.getElementById('swaps');
+        const totalStatesEl = document.getElementById('total-states');
+        const resetBtn = document.getElementById('reset-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const tempSlider = document.getElementById('temp-slider');
+        const tempValue = document.getElementById('temp-value');
+        const instructionEl = document.getElementById('instruction');
+
+        function init() {
+            grid = [];
+            targetGrid = [];
+            selectedIndex = null;
+            
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    const isPattern = PATTERN[y][x] === 1;
+                    grid.push(isPattern ? 1 : 0);
+                    targetGrid.push(isPattern ? 1 : 0);
+                }
+            }
+            
+            // Calculate combinatorics
+            const patternCount = grid.filter(t => t === 1).length;
+            const totalTiles = GRID_SIZE * GRID_SIZE;
+            const combinations = factorial(totalTiles) / (factorial(patternCount) * factorial(totalTiles - patternCount));
+            totalStatesEl.textContent = combinations.toExponential(1);
+            
+            swapCount = 0;
+            workCount = 0;
+            
+            renderGrid();
+            updateStats();
+            updateInstruction();
+        }
+
+        function factorial(n) {
+            if (n <= 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) result *= i;
+            return result;
+        }
+
+        function updateInstruction() {
+            if (selectedIndex !== null) {
+                instructionEl.textContent = "Now click the destination";
+                instructionEl.classList.add('has-selection');
+            } else {
+                instructionEl.textContent = "Click a tile to select it, then click where you want it to go";
+                instructionEl.classList.remove('has-selection');
+            }
+        }
+
+        function renderGrid() {
+            gridEl.innerHTML = '';
+            gridEl.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 40px)`;
+            
+            grid.forEach((value, index) => {
+                const tile = document.createElement('div');
+                const isTargetPosition = targetGrid[index] === 1;
+                const hasPatternTile = value === 1;
+                
+                tile.className = 'tile';
+                
+                if (hasPatternTile) {
+                    if (isTargetPosition) {
+                        // Pattern tile in correct spot = green
+                        tile.classList.add('correct');
+                    } else {
+                        // Pattern tile in wrong spot = red
+                        tile.classList.add('displaced');
+                    }
+                } else {
+                    tile.classList.add('background');
+                    // Show hint where pattern tiles should go
+                    if (isTargetPosition) {
+                        tile.classList.add('target-hint');
+                    }
+                }
+                
+                // Highlight selected tile
+                if (index === selectedIndex) {
+                    tile.classList.add('selected');
+                }
+                
+                tile.dataset.index = index;
+                tile.addEventListener('click', handleTileClick);
+                
+                gridEl.appendChild(tile);
+            });
+        }
+
+        function handleTileClick(e) {
+            const clickedIndex = parseInt(e.target.dataset.index);
+            
+            if (selectedIndex === null) {
+                // Nothing selected yet - select this tile
+                selectedIndex = clickedIndex;
+            } else if (selectedIndex === clickedIndex) {
+                // Clicked same tile - deselect
+                selectedIndex = null;
+            } else {
+                // Have selection - swap tiles
+                const temp = grid[selectedIndex];
+                grid[selectedIndex] = grid[clickedIndex];
+                grid[clickedIndex] = temp;
+                
+                workCount++;
+                selectedIndex = null;
+            }
+            
+            renderGrid();
+            updateStats();
+            updateInstruction();
+        }
+
+        function randomSwap() {
+            if (isPaused) return;
+            
+            // Pick random tile
+            const index1 = Math.floor(Math.random() * grid.length);
+            
+            // Pick random adjacent tile
+            const x1 = index1 % GRID_SIZE;
+            const y1 = Math.floor(index1 / GRID_SIZE);
+            
+            const directions = [];
+            if (x1 > 0) directions.push(-1);
+            if (x1 < GRID_SIZE - 1) directions.push(1);
+            if (y1 > 0) directions.push(-GRID_SIZE);
+            if (y1 < GRID_SIZE - 1) directions.push(GRID_SIZE);
+            
+            if (directions.length === 0) return;
+            
+            const offset = directions[Math.floor(Math.random() * directions.length)];
+            const index2 = index1 + offset;
+            
+            // Only swap if tiles are different (otherwise no visible change)
+            if (grid[index1] !== grid[index2]) {
+                const temp = grid[index1];
+                grid[index1] = grid[index2];
+                grid[index2] = temp;
+                swapCount++;
+                
+                renderGrid();
+                updateStats();
+            }
+        }
+
+        function updateStats() {
+            // Calculate order percentage
+            let correctCount = 0;
+            const patternIndices = [];
+            
+            for (let i = 0; i < targetGrid.length; i++) {
+                if (targetGrid[i] === 1) {
+                    patternIndices.push(i);
+                    if (grid[i] === 1) correctCount++;
+                }
+            }
+            
+            const orderPercent = Math.round((correctCount / patternIndices.length) * 100);
+            orderEl.textContent = orderPercent + '%';
+            
+            // Color the order percentage based on how well we're doing
+            if (orderPercent >= 80) {
+                orderEl.classList.add('good');
+            } else {
+                orderEl.classList.remove('good');
+            }
+            
+            workEl.textContent = workCount;
+            swapsEl.textContent = swapCount;
+        }
+
+        function gameLoop() {
+            // Chaos rate scales with temperature
+            // At temp 1: ~1 swap per second
+            // At temp 5: ~5 swaps per second  
+            // At temp 10: ~10 swaps per second
+            if (Math.random() < temperature * 0.1) {
+                randomSwap();
+            }
+        }
+
+        // Event listeners
+        resetBtn.addEventListener('click', init);
+        
+        pauseBtn.addEventListener('click', () => {
+            isPaused = !isPaused;
+            pauseBtn.textContent = isPaused ? 'Resume' : 'Pause';
+        });
+        
+        tempSlider.addEventListener('input', (e) => {
+            temperature = parseInt(e.target.value);
+            tempValue.textContent = temperature;
+        });
+
+        // Initialize
+        init();
+        
+        // Main loop - runs frequently but swaps are probability-gated
+        setInterval(gameLoop, 100);
+    </script>
+</body>
+</html>

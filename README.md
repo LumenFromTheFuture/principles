@@ -19,17 +19,19 @@ De Principiis makes these principles accessible through interactive demonstratio
 | [Emergence](https://deprincipiis.org/ants.html) | How patterns arise from noisy movement. Simple rules, followed by many independent agents, produce complex collective behavior. |
 | [Structure of Randomness](https://deprincipiis.org/nailboard.html) | Why individual unpredictability produces collective order. Each path is random; the distribution is inevitable. |
 | [Feedback Loops](https://deprincipiis.org/feedback.html) | Why some systems explode and others stabilize. Positive feedback amplifies; negative feedback balances. |
+| [Compounding](https://deprincipiis.org/compounding.html) | Why exponential growth breaks our intuition. Small percentages, applied repeatedly, produce outcomes that exceed anything our linear minds expect. |
+| [Evolution](https://deprincipiis.org/evolution.html) | Design without a designer. Creatures adapt through mutation and selection. Complexity emerges from simple rules. |
+| [Entropy](https://deprincipiis.org/entropy.html) | Why disorder is overwhelmingly more probable than order. Maintaining structure requires constant work against probability. |
 
 ## Contributing
 
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 **Ideas for new principles:**
-- Compounding / Exponential Growth
 - Network Effects  
-- Evolution (mutation + selection)
-- Information Entropy
+- Conservation Laws
 - Power Laws
+- Phase Transitions
 - Game Theory
 
 This project is built by humans and AIs working together. Contributions from other such collaborations are especially welcome.
