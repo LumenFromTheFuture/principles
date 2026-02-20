@@ -66,47 +66,65 @@
             background: rgba(0, 0, 0, 0.3);
         }
 
+        .instruction {
+            text-align: center;
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .instruction.has-selection {
+            color: #4ade80;
+        }
+
         #grid {
             display: grid;
             gap: 2px;
-            cursor: pointer;
         }
 
         .tile {
             width: 40px;
             height: 40px;
             border-radius: 4px;
-            transition: transform 0.1s, box-shadow 0.1s;
-            position: relative;
+            transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+            cursor: pointer;
         }
 
-        .tile.pattern {
-            background: linear-gradient(135deg, #e94560, #ff6b6b);
-            box-shadow: 0 0 10px rgba(233, 69, 96, 0.5);
-        }
-
+        /* Background tiles (empty) */
         .tile.background {
             background: #2a2a4a;
         }
 
-        .tile.target-hint {
-            box-shadow: inset 0 0 0 3px rgba(233, 69, 96, 0.25);
-        }
-
-        .tile.dragging {
-            transform: scale(1.2);
-            box-shadow: 0 0 20px rgba(233, 69, 96, 0.8);
-            z-index: 100;
-        }
-
+        /* Pattern tile in CORRECT position = green */
         .tile.correct {
-            animation: pulse 0.3s ease-out;
+            background: linear-gradient(135deg, #22c55e, #4ade80);
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
         }
 
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
+        /* Pattern tile in WRONG position = red */
+        .tile.displaced {
+            background: linear-gradient(135deg, #dc2626, #ef4444);
+            box-shadow: 0 0 10px rgba(220, 38, 38, 0.5);
+        }
+
+        /* Target hint - where pattern tiles should go */
+        .tile.target-hint {
+            box-shadow: inset 0 0 0 3px rgba(34, 197, 94, 0.3);
+        }
+
+        /* Selected tile */
+        .tile.selected {
+            transform: scale(1.15);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.6);
+            z-index: 10;
+        }
+
+        .tile:hover {
+            transform: scale(1.05);
+        }
+
+        .tile.selected:hover {
+            transform: scale(1.15);
         }
 
         .stats {
@@ -128,6 +146,10 @@
             font-size: 1.8rem;
             font-weight: bold;
             color: #e94560;
+        }
+
+        .stat-value.good {
+            color: #4ade80;
         }
 
         .stat-label {
@@ -284,6 +306,8 @@
             </div>
         </div>
 
+        <p class="instruction" id="instruction">Click a tile to select it, then click where you want it to go</p>
+
         <div class="grid-container">
             <div id="grid"></div>
         </div>
@@ -297,8 +321,8 @@
             <button id="pause-btn">Pause</button>
             <div class="slider-container">
                 <label>Temperature:</label>
-                <input type="range" id="temp-slider" min="1" max="20" value="5">
-                <span id="temp-value">5</span>
+                <input type="range" id="temp-slider" min="1" max="10" value="3">
+                <span id="temp-value">3</span>
             </div>
         </div>
 
@@ -312,13 +336,13 @@
             
             <div class="insight-box">
                 <h3>🎯 The Core Insight</h3>
-                <p>Entropy isn't a force. It's statistics. With 17 colored tiles among 64 positions, there are over a quadrillion arrangements—but only ONE is the pattern. Random shuffling will find disorder because disorder is almost everything.</p>
+                <p>Entropy isn't a force. It's statistics. With 17 colored tiles among 64 positions, there are over a quadrillion arrangements—but only ONE is the pattern. Random shuffling finds disorder because disorder is almost everything.</p>
             </div>
             
             <p>
-                <strong>Drag tiles back into place</strong> to restore order. The faint outlines show where 
-                pattern tiles belong. Notice: the moment you stop working, entropy takes over. Maintaining 
-                order requires constant energy input.
+                <strong>Click tiles to move them back into place.</strong> Green tiles are correct; 
+                red tiles have escaped. The faint outlines show where tiles belong. Notice: the moment 
+                you stop working, entropy takes over.
             </p>
             
             <div class="insight-box">
@@ -351,9 +375,8 @@
         let swapCount = 0;
         let workCount = 0;
         let isPaused = false;
-        let temperature = 5;
-        let draggedTile = null;
-        let draggedIndex = null;
+        let temperature = 3;
+        let selectedIndex = null;
 
         const gridEl = document.getElementById('grid');
         const orderEl = document.getElementById('order-percent');
@@ -364,10 +387,12 @@
         const pauseBtn = document.getElementById('pause-btn');
         const tempSlider = document.getElementById('temp-slider');
         const tempValue = document.getElementById('temp-value');
+        const instructionEl = document.getElementById('instruction');
 
         function init() {
             grid = [];
             targetGrid = [];
+            selectedIndex = null;
             
             for (let y = 0; y < GRID_SIZE; y++) {
                 for (let x = 0; x < GRID_SIZE; x++) {
@@ -388,6 +413,7 @@
             
             renderGrid();
             updateStats();
+            updateInstruction();
         }
 
         function factorial(n) {
@@ -395,6 +421,16 @@
             let result = 1;
             for (let i = 2; i <= n; i++) result *= i;
             return result;
+        }
+
+        function updateInstruction() {
+            if (selectedIndex !== null) {
+                instructionEl.textContent = "Now click the destination";
+                instructionEl.classList.add('has-selection');
+            } else {
+                instructionEl.textContent = "Click a tile to select it, then click where you want it to go";
+                instructionEl.classList.remove('has-selection');
+            }
         }
 
         function renderGrid() {
@@ -409,7 +445,13 @@
                 tile.className = 'tile';
                 
                 if (hasPatternTile) {
-                    tile.classList.add('pattern');
+                    if (isTargetPosition) {
+                        // Pattern tile in correct spot = green
+                        tile.classList.add('correct');
+                    } else {
+                        // Pattern tile in wrong spot = red
+                        tile.classList.add('displaced');
+                    }
                 } else {
                     tile.classList.add('background');
                     // Show hint where pattern tiles should go
@@ -418,60 +460,40 @@
                     }
                 }
                 
-                tile.dataset.index = index;
+                // Highlight selected tile
+                if (index === selectedIndex) {
+                    tile.classList.add('selected');
+                }
                 
-                tile.addEventListener('mousedown', startDrag);
-                tile.addEventListener('touchstart', startDrag, { passive: false });
+                tile.dataset.index = index;
+                tile.addEventListener('click', handleTileClick);
                 
                 gridEl.appendChild(tile);
             });
         }
 
-        function startDrag(e) {
-            e.preventDefault();
-            const index = parseInt(e.target.dataset.index);
-            draggedTile = e.target;
-            draggedIndex = index;
-            draggedTile.classList.add('dragging');
+        function handleTileClick(e) {
+            const clickedIndex = parseInt(e.target.dataset.index);
             
-            document.addEventListener('mousemove', onDrag);
-            document.addEventListener('mouseup', endDrag);
-            document.addEventListener('touchmove', onDrag, { passive: false });
-            document.addEventListener('touchend', endDrag);
-        }
-
-        function onDrag(e) {
-            // Visual feedback could go here
-        }
-
-        function endDrag(e) {
-            if (!draggedTile) return;
-            
-            document.removeEventListener('mousemove', onDrag);
-            document.removeEventListener('mouseup', endDrag);
-            document.removeEventListener('touchmove', onDrag);
-            document.removeEventListener('touchend', endDrag);
-            
-            // Find drop target
-            const touch = e.changedTouches ? e.changedTouches[0] : e;
-            const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
-            
-            if (dropTarget && dropTarget.classList.contains('tile') && dropTarget !== draggedTile) {
-                const targetIndex = parseInt(dropTarget.dataset.index);
-                
-                // Swap tiles
-                const temp = grid[draggedIndex];
-                grid[draggedIndex] = grid[targetIndex];
-                grid[targetIndex] = temp;
+            if (selectedIndex === null) {
+                // Nothing selected yet - select this tile
+                selectedIndex = clickedIndex;
+            } else if (selectedIndex === clickedIndex) {
+                // Clicked same tile - deselect
+                selectedIndex = null;
+            } else {
+                // Have selection - swap tiles
+                const temp = grid[selectedIndex];
+                grid[selectedIndex] = grid[clickedIndex];
+                grid[clickedIndex] = temp;
                 
                 workCount++;
-                renderGrid();
-                updateStats();
+                selectedIndex = null;
             }
             
-            draggedTile.classList.remove('dragging');
-            draggedTile = null;
-            draggedIndex = null;
+            renderGrid();
+            updateStats();
+            updateInstruction();
         }
 
         function randomSwap() {
@@ -521,16 +543,24 @@
             
             const orderPercent = Math.round((correctCount / patternIndices.length) * 100);
             orderEl.textContent = orderPercent + '%';
+            
+            // Color the order percentage based on how well we're doing
+            if (orderPercent >= 80) {
+                orderEl.classList.add('good');
+            } else {
+                orderEl.classList.remove('good');
+            }
+            
             workEl.textContent = workCount;
             swapsEl.textContent = swapCount;
         }
 
         function gameLoop() {
-            // Random swaps based on temperature
-            for (let i = 0; i < temperature; i++) {
-                if (Math.random() < 0.3) {
-                    randomSwap();
-                }
+            // Much gentler chaos - only occasional swaps based on temperature
+            // At temp 1: ~0.5 swaps per second
+            // At temp 10: ~5 swaps per second
+            if (Math.random() < temperature * 0.02) {
+                randomSwap();
             }
         }
 
@@ -550,8 +580,8 @@
         // Initialize
         init();
         
-        // Main loop
-        setInterval(gameLoop, 200);
+        // Main loop - runs frequently but swaps are probability-gated
+        setInterval(gameLoop, 100);
     </script>
 </body>
 </html>
