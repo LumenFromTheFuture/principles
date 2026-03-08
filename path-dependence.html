@@ -405,7 +405,10 @@
             <div class="insight-box">
                 <h3>🎯 The Core Insight</h3>
                 <p>
-                    Each history starts identically: one red ball, one blue ball. Each draw is fair — 50/50. But the first few draws create a slight imbalance, which makes the more-drawn color slightly more likely, which reinforces itself. After enough draws, each history has locked into its own stable proportion — determined not by any design, but by early randomness alone.
+                    Each history starts identically: one red ball, one blue ball. On each draw, one ball is selected at random — with probability proportional to the current composition of the urn. Its color is noted, it is returned, and one extra ball of the same color is added. This is the reinforcement: whichever color was just drawn becomes slightly more likely to be drawn next.
+                </p>
+                <p style="margin-top: 10px;">
+                    The first few draws create a slight imbalance. The reinforcement mechanism amplifies it. After enough draws, each history has locked into a stable proportion — shaped by early randomness and cemented by reinforcement. Neither element alone is sufficient: randomness without reinforcement doesn't lock in; reinforcement without early randomness would converge deterministically to 50%.
                 </p>
                 <p style="margin-top: 10px;">
                     Try <em>Replay Same Seed</em>: the simulation runs again with the exact same random sequence and produces the exact same set of locked-in worlds. Path dependence is not randomness — it is early randomness amplified into permanence. The same history, replayed, always ends the same way.
